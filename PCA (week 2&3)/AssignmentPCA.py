@@ -31,36 +31,35 @@ def readAllDescriptors(df,target):
     -------
     all_descriptors : DataFrame
         All moleucle descriptors of all molecules in the dataset.
-
     '''
     # First use clas Molecule to be able to use functions in this class
-    molecules = Molecule(df,target)
-    df_target = molecules.df_target
-    indexes = list(df_target.index)
+    molecule_class = Molecule(df,target)
+    df_target_full = molecule_class.df_target
+    indexes = list(df_target_full.index)
     
     # Start with reading the first molecule so all other molecules can be
     # appended to this one
-    all_descriptors = molecules.readMolDescriptors(indexes[0])
+    df_target_only_descriptors = molecule_class.readMolDescriptors(indexes[0])
     
     for i in range(1,len(indexes)): 
         # For each index in the lengt of the dataframe extract the descriptors
-        info = molecules.readMolDescriptors(indexes[i])
+        descriptors_one_molecule = molecule_class.readMolDescriptors(indexes[i])
         # Each time update all descriptors by adding the new descriptors to the dataframe
-        all_descriptors = all_descriptors.append(info)
+        df_target_only_descriptors = df_target_only_descriptors.append(descriptors_one_molecule)
     
-    return all_descriptors
+    return df_target_only_descriptors
 
 class Average:
     
-    def __init__(self,param_list):
+    def __init__(self,columns_of_interest_list):
         '''
         Parameters
         ----------
         param_list : list
             List of values of which the moving average will be calculated
         '''
-        self.param_list = param_list
-        self.len = len(param_list)
+        self.columns_of_interest_list = columns_of_interest_list
+        self.len = len(columns_of_interest_list)
         
     def cumulativeMovingAverage(self):
         '''
@@ -72,13 +71,15 @@ class Average:
             The moving average of the input list.
         '''
         # Firstly, an empty list is created so the values can be replaced
-        C = [0]*self.len
+        cumulative_moving_average = [0]*self.len
         
         for i in range(1,self.len):
-            # The formula for moving average is applied:
-            C[i] = C[i-1] + (self.param_list[i-1] - C[i-1])/((i-1)+1)
+            # The formula for the cumulative moving average is applied:
+            numerator = self.columns_of_interest_list[i-1] - cumulative_moving_average[i-1]
+            denominator = (i-1)+1
+            cumulative_moving_average[i] = cumulative_moving_average[i-1] + numerator/denominator
             
-        return C
+        return cumulative_moving_average
 
 class Plot:
     
@@ -87,8 +88,9 @@ class Plot:
         Parameters
         ----------
         df : DataFrame
-            a dataframe with 34 columns, all descriptors of the molecule which
+            A dataframe with 34 columns, all descriptors of the molecule which
             is defined in the first column with the smile
+            The dataframe can be of all targets or of a single target.
         columns_of_interest : List of strings
             A list of the columns of which the moving averages of the values will 
             be plotted, can be of any length between 1 and the amount of columns 
@@ -116,9 +118,7 @@ class Plot:
             values = self.df[descriptor].values.tolist()
             # The moving average is now calculated with the function
             # cumulativeMovngAverage from class Average
-            avg = Average(values) # First create an instance of Average
-            CMA = avg.cumulativeMovingAverage() # Function applied
-            
+            CMA = Average(values).cumulativeMovingAverage()            
             plt.plot(CMA)
             
             # Add axes and labels
@@ -173,7 +173,7 @@ class Covariance:
     
 class CovarianceMatrix:
     
-    def __init__(self,df,target):
+    def __init__(self,df_full,target):
         '''
         Parameters
         ----------
@@ -184,15 +184,14 @@ class CovarianceMatrix:
             One of three options: ppar, thrombin or cox2
         '''
         
-        self.df = df
+        self.df_full = df_full
         
-        molecules = Molecule(df,target)
-        self.df_target = molecules.df_target
+        self.df_target_full = Molecule(df_full,target).df_target
         
-        self.df_descriptors = readAllDescriptors(df,target)
-        self.descriptors = list(self.df_descriptors.columns)
+        self.df_target_only_descriptors = readAllDescriptors(df_full,target)
+        self.descriptors = list(self.df_target_only_descriptors.columns)
         
-        self.df_descriptors_scaled = self.scaleVariables()
+        self.df_target_only_descriptors_scaled = self.scaleVariables()
         
     def scaleVariables(self): 
         '''
@@ -205,32 +204,32 @@ class CovarianceMatrix:
             The standardized DataFrame.
         '''
         # Create new DataFrame:
-        df_descriptors_scaled = self.df_descriptors.copy()
-        columns = list(self.df_descriptors.columns)
+        df_target_only_descriptors_scaled = self.df_target_only_descriptors.copy()
+        columns = list(self.df_target_only_descriptors.columns)
         
         for col in columns:
             # Extract all values per column
-            column = self.df_descriptors[col]
+            column = self.df_taret_only_descriptors[col]
             
             # Now calculate the standard deviation and average using numpy functions
             std = np.std(column.values.tolist())
             avg = np.average(column.values.tolist())
             
-            for ind in self.df_target.index:
+            for ind in self.df_target_full.index:
                 # Now loop over each index
                 if std == 0:
                     # If the standard deviation is zero, the scaling can't be done
                     # because this would mean dividing by zero. So 'skipping'
                     # these values and setting them to zero.                    
-                    df_descriptors_scaled.at[ind,col] = 0
+                    df_target_only_descriptors_scaled.at[ind,col] = 0
                 else:
                     # Extracting value per index
-                    value = self.df_descriptors.at[ind,col]
+                    value = self.df_target_only_descriptors.at[ind,col]
                     # Performing the standardization:
-                    scaled = (value - avg)/std
+                    scaled_value = (value - avg)/std
                     # Replace each value in the new DataFrame
-                    df_descriptors_scaled.at[ind,col] = scaled    
-        return df_descriptors_scaled
+                    df_target_only_descriptors_scaled.at[ind,col] = scaled_value    
+        return df_target_only_descriptors_scaled
     
     def covMatrix(self):
         '''
@@ -245,22 +244,21 @@ class CovarianceMatrix:
         # Create empty DataFrame with the molecule descriptors at the column
         # names and at the indexes. (symmetrical)
         zeroes = np.zeros(shape = (len(self.descriptors), len(self.descriptors)))
-        cov_mat = pd.DataFrame(zeroes, columns = self.descriptors)
-        cov_mat = cov_mat.set_axis(self.descriptors)
+        covariance_matrix = pd.DataFrame(zeroes, columns = self.descriptors)
+        covariance_matrix = covariance_matrix.set_axis(self.descriptors)
         
         for j in self.descriptors:
             
             for k in self.descriptors:
                 # Now for each combination of descriptors extract the two descriptor list                
-                columnj = self.df_descriptors_scaled[j].to_list()
-                columnk = self.df_descriptors_scaled[k].to_list()
+                columnj = self.df_target_only_descriptors_scaled[j].to_list()
+                columnk = self.df_target_only_descriptors_scaled[k].to_list()
                 # Calculate the covariance of the two descriptors using the function
                 # calculateCovariance from class Covariance
-                cov = Covariance(columnj,columnk) # First create an instance of Covariance
-                covariance = cov.calculateCovariance() # Now apy the function
+                covariance_value = Covariance(columnj,columnk).calculateCovariance()
                 # Add each value in the (previously) empty DataFrame.
-                cov_mat.at[j,k] = covariance        
-        return cov_mat
+                covariance_matrix.at[j,k] = covariance_value        
+        return covariance_matrix
 
 class PCA:
     
@@ -273,8 +271,8 @@ class PCA:
             columns.
         '''
         
-        self.cov_mat = covariance_matrix
-        self.eig_vals, self.eig_vecs = self.perform_PCA()
+        self.covariance_matrix = covariance_matrix
+        self.eigen_values, self.eigen_vectors = self.perform_PCA()
         
     def perform_PCA(self):
         '''
@@ -288,12 +286,12 @@ class PCA:
             Eigenvectors of the covariance matrix
         '''
         # Use the numpy function to extract eigenvalues and eigenvectors
-        eig_vals, eig_vecs = np.linalg.eig(self.cov_mat)
+        eigen_values, eigen_vectors = np.linalg.eig(self.cov_mat)
         # If there are complex values, convert them to real values, because plotting
         # with complex values will be difficult later on.
-        eig_vals = np.real(eig_vals)
-        eig_vecs = np.real(eig_vecs)
-        return eig_vals, eig_vecs
+        eigen_values = np.real(eigen_values)
+        eigen_vectors = np.real(eigen_vectors)
+        return eigen_values, eigen_vectors
     
 class PCA_plot():
     
@@ -309,22 +307,14 @@ class PCA_plot():
         '''
         self.targets = targets
         
-        mat1 = CovarianceMatrix(df,targets[0])
-        self.mat_cov1 = mat1.covMatrix()
-        mat2 = CovarianceMatrix(df,targets[1])
-        self.mat_cov2 = mat2.covMatrix()
-        mat3 = CovarianceMatrix(df,targets[2])
-        self.mat_cov3 = mat3.covMatrix()
+        self.mat_cov1 = CovarianceMatrix(df,targets[0]).covMatrix()
+        self.mat_cov2 = CovarianceMatrix(df,targets[1]).covMatrix()
+        self.mat_cov3 = CovarianceMatrix(df,targets[2]).covMatrix()
         
-        PCA1 = PCA(self.mat_cov1)
-        self.target1_eigval, self.target1_eigvec = PCA1.perform_PCA()
-        self.color1 = 'r'
-        PCA2 = PCA(self.mat_cov2)
-        self.target2_eigval, self.target2_eigvec = PCA2.perform_PCA()
-        self.color2 = 'b'
-        PCA3 = PCA(self.mat_cov3)
-        self.target3_eigval, self.target3_eigvec = PCA3.perform_PCA()
-        self.color3 = 'g' 
+        self.target1_eigval, self.target1_eigvec = PCA(self.mat_cov1).perform_PCA()
+        self.target2_eigval, self.target2_eigvec = PCA(self.mat_cov2).perform_PCA()   
+        self.target3_eigval, self.target3_eigvec = PCA(self.mat_cov3).perform_PCA()
+        self.color1, self.color2, self.color3 = 'r','b','g' 
         
     def PCA_plot_2D(self):
         '''
@@ -391,17 +381,14 @@ class PCA_plot():
 
 class Loadings():
     
-    def __init__(self,df,target):
-        
-        molecules = Molecule(df,target)
-        self.df_target = molecules.df_target
-        
-        mat = CovarianceMatrix(df,target)
-        self.df_descriptors_scaled = mat.scaleVariables()
+    def __init__(self,df_full,target):
+         
+        #self.df_target_full = Molecule(df_full,target).df_target
+        self.df_target_only_descriptors_scaled = CovarianceMatrix(df_full,target).scaleVariables()
 
     def calculate_loadings(self):
         
-        X = self.df_descriptors_scaled.to_numpy()
+        X = self.df_target_only_descriptors_scaled.to_numpy()
         X =  np.vstack(X).astype(np.float)
         U, s, VT = svd(X)
         
