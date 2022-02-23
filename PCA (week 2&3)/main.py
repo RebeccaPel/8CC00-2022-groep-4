@@ -12,7 +12,7 @@ from Molecule import Molecule
 from AssignmentPCA import readAllDescriptors, Plot, Covariance, CovarianceMatrix, PCA, PCA_plot, Loadings
 
 # (a) Testing Molcule
-df = pd.read_csv('QSAR_reduced_39.csv')
+df = pd.read_csv('QSAR_3_large_data.csv')
 mol = Molecule(df,'ppar') 
 df_target = mol.df_target
 # (b)
