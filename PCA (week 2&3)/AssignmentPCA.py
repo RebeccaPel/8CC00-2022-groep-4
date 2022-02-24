@@ -209,7 +209,7 @@ class CovarianceMatrix:
         
         for col in columns:
             # Extract all values per column
-            column = self.df_taret_only_descriptors[col]
+            column = self.df_target_only_descriptors[col]
             
             # Now calculate the standard deviation and average using numpy functions
             std = np.std(column.values.tolist())
