@@ -11,7 +11,7 @@ import numpy as np
 from Molecule import Molecule
 from AssignmentPCA import readAllDescriptors, Plot, Covariance, CovarianceMatrix, PCA, PCA_plot, Loadings
 
-# (a) Testing Molcule
+# (a) Testing Molecule
 df = pd.read_csv('QSAR_3_large_data.csv')
 df_target_full = Molecule(df,'ppar').df_target
 # (b)
@@ -22,7 +22,7 @@ df_target_only_descriptors = readAllDescriptors(df, 'ppar')
     
 # (d) (e) Testing Plot
 columns_of_interest = ['nHet','nS','nAB','SlogP'] #some randomly chosen descriptors
-#plot = Plot(df_target,columns_of_interest)
+#plot = Plot(df_target_only_descriptors,columns_of_interest)
 #twoDplot = plot.twoDimPlot()
 
 # (f) Testing Covariance
