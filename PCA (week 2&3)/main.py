@@ -44,8 +44,8 @@ pca_eigval, pca_eigvec = pca_class.perform_PCA()
 
 # (i) Testing plotting
 pca_plot = PCA_plot(df)
-#pca_plot.PCA_plot_2D()
-#pca_plot.PCA_plot_3D()
+pca_plot.PCA_plot_2D()
+pca_plot.PCA_plot_3D()
 
 # (j) Testing loadings:
 load = Loadings(df,'ppar')

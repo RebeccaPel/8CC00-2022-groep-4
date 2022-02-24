@@ -245,8 +245,7 @@ class CovarianceMatrix:
         # names and at the indexes. (symmetrical)
         zeroes = np.zeros(shape = (len(self.descriptors), len(self.descriptors)))
         covariance_matrix = pd.DataFrame(zeroes, columns = self.descriptors)
-        covariance_matrix = covariance_matrix.set_axis(self.descriptors)
-        
+        covariance_matrix = covariance_matrix.set_axis(self.descriptors)        
         for j in self.descriptors:
             
             for k in self.descriptors:
@@ -286,7 +285,7 @@ class PCA:
             Eigenvectors of the covariance matrix
         '''
         # Use the numpy function to extract eigenvalues and eigenvectors
-        eigen_values, eigen_vectors = np.linalg.eig(self.cov_mat)
+        eigen_values, eigen_vectors = np.linalg.eig(self.covariance_matrix)
         # If there are complex values, convert them to real values, because plotting
         # with complex values will be difficult later on.
         eigen_values = np.real(eigen_values)
