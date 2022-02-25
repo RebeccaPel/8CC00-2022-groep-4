@@ -23,9 +23,6 @@ df_target_only_descriptors = readAllDescriptors(df, 'ppar')
 # (d) (e) Testing Plot
 columns_of_interest = ['nHet','nS','nAB','SlogP'] #some randomly chosen descriptors
 plot = Average(df_target_full,columns_of_interest)
-# Oude manier:
-#plot.plot_cumulative_moving_average()
-# Nieuwe manier:
 cum_mov_avg_dict = plot.cumulative_moving_average_alternative()
 #plot.plot_cumulative_moving_average_alternative()
 
@@ -48,14 +45,14 @@ pca_plot = PCA_plot(df)
 #pca_plot.PCA_plot_2D()
 #pca_plot.PCA_plot_3D()
 
-# (j) Testing loadings:
-n_vars = 5
-n_PCs = 3
-for PC in range(n_PCs):
-    pca_plot.loading_plots(Molecule(df, 'ppar').descriptors, 
-                  0,
-                  PC = PC+1, 
-                  n_vars = n_vars)
+# # (j) Testing loadings:
+# n_vars = 5
+# n_PCs = 3
+# for PC in range(n_PCs):
+#     pca_plot.loading_plots(Molecule(df, 'ppar').descriptors, 
+#                   0,
+#                   PC = PC+1, 
+#                   n_vars = n_vars)
 
 
 

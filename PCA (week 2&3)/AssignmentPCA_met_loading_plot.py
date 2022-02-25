@@ -62,56 +62,10 @@ class Average:
         self.len_values = len(df)
         self.columns_of_interest_list = columns_of_interest_list
         self.len_columns = len(columns_of_interest_list)  
-        
-        # For the alternative plot:
+
         self.cumulative_moving_average_dictionary = self.cumulative_moving_average_alternative()
         
-    def cumulative_moving_average(self,values_of_column):
-        '''
-        This function calculates a moving average of a list.
-
-        Returns
-        -------
-        C : list
-            The moving average of the input list.
-        '''
-        # Firstly, an empty list is created so the values can be replaced
-        cumulative_moving_average = [0]*self.len_values
-        
-        for i in range(1,self.len_values):
-            # The formula for the cumulative moving average is applied:
-            numerator = values_of_column[i-1] - cumulative_moving_average[i-1]
-            denominator = (i-1)+1
-            cumulative_moving_average[i] = cumulative_moving_average[i-1] + numerator/denominator
-            
-        return cumulative_moving_average
-
-    def plot_cumulative_moving_average(self):
-        '''
-        This function creates a two-dimensional plot of the moving averages. On
-        the x-axis the index of the moving average and the value on the y-axis.
-
-        Returns
-        -------
-        No return, but a plot will be shown of the calculated moving average(s).
-
-        '''
-        # Looped for each moving average that will be plotted:
-        for i in range(self.len_columns):
-            # Extract the name of the column
-            descriptor = self.columns_of_interest_list[i]
-            # Extract values of the column and convert them to a list
-            values = self.df[descriptor].values.tolist()
-            # The moving average is now calculated with the function
-            # cumulativeMovngAverage from class Average
-            CMA = self.cumulative_moving_average(values)     
-            plt.plot(CMA)
-            
-            # Add axes and labels
-            
-        plt.show()
-        
-    def cumulative_moving_average_alternative(self):            
+    def cumulative_moving_average(self):            
         cumulative_moving_average_dictionary = {}
         for descriptor_name in self.columns_of_interest_list:
                 
@@ -128,7 +82,7 @@ class Average:
                 
         return cumulative_moving_average_dictionary
     
-    def plot_cumulative_moving_average_alternative(self):
+    def plot_cumulative_moving_average(self):
         
         for key in self.columns_of_interest_list:
             cma = self.cumulative_moving_average_dictionary.get(key)
