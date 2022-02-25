@@ -78,6 +78,7 @@ class Average:
             numerator = self.columns_of_interest_list[i-1] - cumulative_moving_average[i-1]
             denominator = (i-1)+1
             cumulative_moving_average[i] = cumulative_moving_average[i-1] + numerator/denominator
+            # Klopt deze?
             
         return cumulative_moving_average
 
