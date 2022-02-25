@@ -8,6 +8,7 @@ Created on Tue Feb 15 16:36:10 2022
 class Molecule:
     
     # Class variable = descriptors
+    # Willen we dit nog?
     
     def __init__(self,df,target):
         '''
