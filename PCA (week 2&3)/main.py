@@ -22,8 +22,8 @@ df_target_only_descriptors = readAllDescriptors(df, 'ppar')
     
 # (d) (e) Testing Plot
 columns_of_interest = ['nHet','nS','nAB','SlogP'] #some randomly chosen descriptors
-#plot = Plot(df_target,columns_of_interest)
-#twoDplot = plot.twoDimPlot()
+plot = Plot(df_target_full,columns_of_interest)
+twoDplot = plot.twoDimPlot()
 
 # (f) Testing Covariance
 lst1 = df['nHet'].values.tolist()
