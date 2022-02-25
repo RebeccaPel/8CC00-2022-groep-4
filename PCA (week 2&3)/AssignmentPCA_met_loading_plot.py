@@ -140,9 +140,9 @@ class Average:
         plt.show()
                     
         
-class Covariance:
+class PCA:
     
-    def __init__(self,list1,list2):
+    def __init__(self,df_full,target):
         '''
         Parameters
         ----------
@@ -153,19 +153,24 @@ class Covariance:
         
         Raises ValueError if list1 is not the same length as list2
         '''
+        self.df_full = df_full
         
-        self.list1 = list1
-        self.list2 = list2
-        # If lists are not the same length, raise ValueError
-        if len(list1) != len(list2):
-            raise ValueError('Lists are not of the same length')
-        else:
-            self.len = len(list1) # or list2, makes no difference
+        self.df_target_full = Molecule(df_full,target).df_target
         
-        self.avg1 = np.average(list1) #sum(list1)/len(list1)
-        self.avg2 = np.average(list2) #sum(list2)/len(list2)
+        self.df_target_only_descriptors = readAllDescriptors(df_full,target)
+        self.descriptors = list(self.df_target_only_descriptors.columns)
         
-    def calculateCovariance(self):
+        # Scaled variables.
+        self.df_target_only_descriptors_scaled = self.scale_variables()
+        
+        # Covariance matrix.
+        self.covariance_matrix = self.calculate_covariance_matrix()
+        self.eigen_values, self.eigen_vectors = self.perform_PCA()
+
+        
+    def calculate_covariance(self,list1=[],
+                            list2=[],
+                            bias = False):
         '''
         The covariance of two lists is calculated.
 
@@ -174,41 +179,32 @@ class Covariance:
         covariance : float
             The covariance of two lists.
         '''
+        # If lists are not the same length, raise ValueError
+        if len(list1) != len(list2):
+            raise ValueError('Lists are not of the same length')
+        else:
+            len_list = len(list1) # or list2, makes no difference
+        
+        avg1 = np.average(list1) #sum(list1)/len(list1)
+        avg2 = np.average(list2) #sum(list2)/len(list2)
+        
         # Start with the sum at zero
         sum_of = 0
-        for i in range(self.len):
+        for i in range(len_list):
             # Substract each value in the list with its average
-            a = self.list1[i]-self.avg1
-            b = self.list2[i]-self.avg2
+            a = list1[i]-avg1
+            b = list2[i]-avg2
             # Now multiply the values and add them to the sum
             sum_of += a*b
         # Apply last step to calculate covariance
-        covariance = sum_of * (1/(self.len)) # -1 or not 
+        if bias == True:
+            covariance = sum_of * (1/(len_list-1))
+        if bias == False:
+            covariance = sum_of * (1/len_list)
+        
         return covariance
-    
-class CovarianceMatrix:
-    
-    def __init__(self,df_full,target):
-        '''
-        Parameters
-        ----------
-        df : DataFrame
-            a dataframe with 34 columns, all descriptors of the molecule which
-            is defined in the first column with the smile
-        target : str
-            One of three options: ppar, thrombin or cox2
-        '''
         
-        self.df_full = df_full
-        
-        self.df_target_full = Molecule(df_full,target).df_target
-        
-        self.df_target_only_descriptors = readAllDescriptors(df_full,target)
-        self.descriptors = list(self.df_target_only_descriptors.columns)
-        
-        self.df_target_only_descriptors_scaled = self.scaleVariables()
-        
-    def scaleVariables(self): 
+    def scale_variables(self): 
         '''
         This functions scales all values in the DataFrame with the standardization
         method.
@@ -246,7 +242,7 @@ class CovarianceMatrix:
                     df_target_only_descriptors_scaled.at[ind,col] = scaled_value    
         return df_target_only_descriptors_scaled
     
-    def covMatrix(self):
+    def calculate_covariance_matrix(self):
         '''
         This function creates the covariance matrix of the scaled dataframe
         created in scaleVariables.
@@ -270,24 +266,10 @@ class CovarianceMatrix:
                 columnk = self.df_target_only_descriptors_scaled[k].to_list()
                 # Calculate the covariance of the two descriptors using the function
                 # calculateCovariance from class Covariance
-                covariance_value = Covariance(columnj,columnk).calculateCovariance()
+                covariance_value = self.calculate_covariance(columnj,columnk,bias=False)
                 # Add each value in the (previously) empty DataFrame.
                 covariance_matrix.at[j,k] = covariance_value        
         return covariance_matrix
-
-class PCA:
-    
-    def __init__(self,covariance_matrix):
-        '''
-        Parameters
-        ----------
-        covariance_matrix : DataFrame
-            A covariance matrix with the molecule descriptors on the indexes and
-            columns.
-        '''
-        
-        self.covariance_matrix = covariance_matrix
-        self.eigen_values, self.eigen_vectors = self.perform_PCA()
         
     def perform_PCA(self):
         '''
@@ -318,18 +300,22 @@ class PCA_plot():
             a dataframe with 34 columns, all descriptors of the molecule which
             is defined in the first column with the smile
         targets : list, optional
-            DESCRIPTION. The default is ['ppar','thrombin','cox2'].
+            The default is ['ppar','thrombin','cox2'].
         '''
         self.targets = targets
         
-        self.mat_cov1 = CovarianceMatrix(df,targets[0]).covMatrix()
-        self.mat_cov2 = CovarianceMatrix(df,targets[1]).covMatrix()
-        self.mat_cov3 = CovarianceMatrix(df,targets[2]).covMatrix()
+        pca_target_1, pca_target_2, pca_target_3 = PCA(df,targets[0]), PCA(df,targets[1]), PCA(df,targets[2])
         
-        self.target1_eigval, self.target1_eigvec = PCA(self.mat_cov1).perform_PCA()
-        self.target2_eigval, self.target2_eigvec = PCA(self.mat_cov2).perform_PCA()   
-        self.target3_eigval, self.target3_eigvec = PCA(self.mat_cov3).perform_PCA()
+        self.mat_cov1 = pca_target_1.calculate_covariance_matrix()
+        self.mat_cov2 = pca_target_2.calculate_covariance_matrix()
+        self.mat_cov3 = pca_target_3.calculate_covariance_matrix()
+        
+        self.target1_eigval, self.target1_eigvec = pca_target_1.perform_PCA()
+        self.target2_eigval, self.target2_eigvec = pca_target_2.perform_PCA()   
+        self.target3_eigval, self.target3_eigvec = pca_target_3.perform_PCA()
         self.color1, self.color2, self.color3 = 'r','b','g' 
+        
+        
         
     def PCA_plot_2D(self):
         '''
@@ -338,7 +324,7 @@ class PCA_plot():
         different color.
         '''
         
-       # Plot three times, for each target: 
+        # Plot three times, for each target: 
         plt.scatter((self.target1_eigval[0]*self.target1_eigvec[:,0]), 
                   (self.target1_eigval[1]*self.target1_eigvec[:,1]),
                   label = str(self.targets[0]))
@@ -366,26 +352,26 @@ class PCA_plot():
         
         # Plot three times for each target:
         ax.scatter((self.target1_eigval[0]*self.target1_eigvec[:,0]), 
-                   (self.target1_eigval[1]*self.target1_eigvec[:,1]), 
-                   (self.target1_eigval[2]*self.target1_eigvec[:,2]), 
-                   c=self.color1, 
-                   cmap=plt.cm.nipy_spectral, 
-                   edgecolor="k",
-                   label = str(self.targets[0]))
+                    (self.target1_eigval[1]*self.target1_eigvec[:,1]), 
+                    (self.target1_eigval[2]*self.target1_eigvec[:,2]), 
+                    c=self.color1, 
+                    cmap=plt.cm.nipy_spectral, 
+                    edgecolor="k",
+                    label = str(self.targets[0]))
         ax.scatter((self.target2_eigval[0]*self.target2_eigvec[:,0]), 
-                   (self.target2_eigval[1]*self.target2_eigvec[:,1]), 
-                   (self.target2_eigval[2]*self.target2_eigvec[:,2]), 
-                   c=self.color2, 
-                   cmap=plt.cm.nipy_spectral, 
-                   edgecolor="k",
-                   label = str(self.targets[1]))
+                    (self.target2_eigval[1]*self.target2_eigvec[:,1]), 
+                    (self.target2_eigval[2]*self.target2_eigvec[:,2]), 
+                    c=self.color2, 
+                    cmap=plt.cm.nipy_spectral, 
+                    edgecolor="k",
+                    label = str(self.targets[1]))
         ax.scatter((self.target3_eigval[0]*self.target3_eigvec[:,0]), 
-                   (self.target3_eigval[1]*self.target3_eigvec[:,1]), 
-                   (self.target3_eigval[2]*self.target3_eigvec[:,2]), 
-                   c=self.color3, 
-                   cmap=plt.cm.nipy_spectral, 
-                   edgecolor="k",
-                   label = str(self.targets[2])) 
+                    (self.target3_eigval[1]*self.target3_eigvec[:,1]), 
+                    (self.target3_eigval[2]*self.target3_eigvec[:,2]), 
+                    c=self.color3, 
+                    cmap=plt.cm.nipy_spectral, 
+                    edgecolor="k",
+                    label = str(self.targets[2])) 
         
         ax.legend(loc='upper left')        
         ax.set_xlabel('Component 1')
@@ -431,27 +417,20 @@ def loading_plots(variable_names_list, eig_vals_real, eig_vecs_real, PC=1,
     Loading plot of a predefined number of variables with the largest
     loading for a principal component of choice.
     """
-    import numpy as np
-    import matplotlib.pyplot as plt
-    
+
+    # Select the correct data:
+        
+
     # Make a list of (eigenvalue, eigenvector) tuples and sort the 
     # (eigenvalue, eigenvector) tuples from high to low
     
     # Make a list of (eigenvalue, eigenvector) tuples
-    eig_pairs = [(np.abs(eig_vals_real[i]), eig_vecs_real[:,i]) 
-                  for i in range(len(eig_vals_real))]
+    eig_val_vec_list = [(np.abs(eig_vals_real[i]), eig_vecs_real[:,i]) 
+                   for i in range(len(eig_vals_real))]
     # Sort the (eigenvalue, eigenvector) tuples from high to low
-    eig_pairs.sort(key=lambda tup: tup[0], reverse=True)
-    
-    # eig_val_vec_list = [(np.abs(eig_vals_real[i]), eig_vecs_real[:,i]) 
-    #                     for i in range(len(eig_vals_real))
-    #                     ].sort(key=lambda tup: tup[0], reverse=True)
-    # print(f'{type(eig_val_vec_list) = }\n')
-    # # Calculate the loading scores of all variables on the PC of interest
-    # print(f'{eig_val_vec_list[PC-1][1].T = }\n')
-    # print(f'{eig_val_vec_list[PC-1][0] = }\n')
-    # print(f'{PC-1}\n')
-    eig_val_vec_list = eig_pairs
+    eig_val_vec_list.sort(key=lambda tup: tup[0], reverse=True)
+
+    # Calculate the loading scores of all variables on the PC of interest
     loadings = eig_val_vec_list[PC-1][1].T / np.sqrt(eig_val_vec_list[PC-1][0])
     # Convert this array to a list
     loadings = loadings.tolist()
@@ -459,7 +438,7 @@ def loading_plots(variable_names_list, eig_vals_real, eig_vecs_real, PC=1,
     # Make a list of tuples containing (variable_name, loading)
     var_names_loadings_tuples_list = [(variable_names_list[i], loadings[i]) 
                                       for i in range(len(loadings))]
-    print(f'{var_names_loadings_tuples_list = }')
+    #print(f'{var_names_loadings_tuples_list = }')
     # Order this list of tuples by their loading, in descending order
     var_names_loadings_tuples_list.sort(key=lambda num: abs(num[1]),
                                         reverse=True)
@@ -498,58 +477,4 @@ def loading_plots(variable_names_list, eig_vals_real, eig_vecs_real, PC=1,
     plt.savefig(f'Loading plot PC{PC}.png', dpi=300, bbox_inches='tight')
     plt.show()
     
-    
-    # ==================================================================
-    # VERSIE 2
-    # ==================================================================
-    
-    # # Discard imaginary part of eigenvalues 
-    # eig_vals = np.real(eig_vals_real)
-    # # Make a list of (eigenvalue, eigenvector) tuples
-    # eig_pairs = [(np.abs(eig_vals[i]), eig_vecs_real[:,i]) 
-    #              for i in range(len(eig_vals))]
-    
-    # # Calculate the loading of all genes on the PC of interest
-    # loading = eig_pairs[PC-1][1].T * np.sqrt(eig_pairs[PC-1][0])
-    # # Convert this array to a list
-    # loading = loading.tolist()
-    
-    # # Make a list of tuples containing (geneName, loading)
-    # listoftup = []
-    # for i in range(len(loading)):
-    #     listoftup.append((variable_names_list[i],loading[i]))
-    
-    # # Order this list of tuples by their loading, in descending order
-    # listoftup.sort(key=lambda num: abs(num[1]), reverse=True)
-    
-    # # Only select the highest loadings (see: var)
-    # selected = listoftup[0:n_vars+1]
-    
-    # # Make two separate lists again: genes containing the names of the genes (ordered) 
-    # # and loading containing the loadings of these genes. Their indices match.
-    # genes,loading = zip(*selected)
-    
-    # # Make a bar graph: configuration
-    # fig = plt.figure(figsize=(10,5), dpi=150)
-    # ax = fig.add_axes([0,0,1,1])
-    # plt.xticks(rotation=90) # Rotate the labels so that they are readable
-    # ax.set_title("Loading plot PC{PCin}".format(PCin = PC))
-    # ax.set_ylabel('Loading')
-    
-    # # Forloop to color all negative loadings in the plot red; all positive loadings green
-    # Red_Green = []
-    # for item in loading:
-    #     item = item.real
-    #     if item >= 0:
-    #         Red_Green.append('green')
-    #     else:
-    #         Red_Green.append('red')
-    
-    # # Create the bar graph
-    # ax.bar(genes,loading, color=Red_Green)
-    # # Save and show the image
-    # plt.savefig('loading.png', dpi=300, bbox_inches='tight')
-    # plt.show()
-
-
 
