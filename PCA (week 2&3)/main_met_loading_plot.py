@@ -54,7 +54,17 @@ pca_plot = PCA_plot(df)
 #                   PC = PC+1, 
 #                   n_vars = n_vars)
 
-
+n_vars = 5
+n_PCs = 3
+PC = 1
+for target in ['ppar', 'thrombin', 'cox2']:
+    # for PC in range(n_PCs):
+        pca_plot.loading_plots(Molecule(df, 'ppar').descriptors[2:], 
+                      # eig_vals_real = pca_eigval, 
+                      # eig_vecs_real = pca_eigvec,
+                      target = target,
+                      PC = PC+1, 
+                      n_vars = n_vars)
 
 
 

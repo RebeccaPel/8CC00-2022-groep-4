@@ -501,11 +501,11 @@ class PCA_plot():
         """
     
         # Select the correct data:
-        if target == 0:
+        if target == 0 or target == 'ppar':
             eig_vals,eig_vecs = self.target1_eigval, self.target1_eigvec
-        elif target == 1:
+        elif target == 1 or target == 'thrombin':
             eig_vals,eig_vecs = self.target2_eigval, self.target2_eigvec
-        elif target == 2:
+        elif target == 2 or target == 'cox2':
             eig_vals,eig_vecs = self.target3_eigval, self.target3_eigvec
         else: 
             raise ValueError('Target unknown')
