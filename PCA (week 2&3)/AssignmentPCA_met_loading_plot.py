@@ -108,6 +108,8 @@ class Average:
             plt.plot(CMA)
             
             # Add axes and labels
+            plt.xlabel("Index")
+            plt.ylabel("Cumulative moving averages")
             
         plt.show()
         
