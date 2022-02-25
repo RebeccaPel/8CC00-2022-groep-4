@@ -39,11 +39,11 @@ def readAllDescriptors(df,target):
     
     # Start with reading the first molecule so all other molecules can be
     # appended to this one
-    df_target_only_descriptors = molecule_class.read_mol_descriptors(indexes[0])
+    df_target_only_descriptors = molecule_class.readMolDescriptors(indexes[0])
     
     for i in range(1,len(indexes)): 
         # For each index in the lengt of the dataframe extract the descriptors
-        descriptors_one_molecule = molecule_class.read_mol_descriptors(indexes[i])
+        descriptors_one_molecule = molecule_class.readMolDescriptors(indexes[i])
         # Each time update all descriptors by adding the new descriptors to the dataframe
         df_target_only_descriptors = df_target_only_descriptors.append(descriptors_one_molecule)
     
@@ -209,7 +209,7 @@ class CovarianceMatrix:
         
         for col in columns:
             # Extract all values per column
-            column = self.df_target_only_descriptors[col]
+            column = self.df_taret_only_descriptors[col]
             
             # Now calculate the standard deviation and average using numpy functions
             std = np.std(column.values.tolist())
@@ -286,7 +286,7 @@ class PCA:
             Eigenvectors of the covariance matrix
         '''
         # Use the numpy function to extract eigenvalues and eigenvectors
-        eigen_values, eigen_vectors = np.linalg.eig(self.covariance_matrix)
+        eigen_values, eigen_vectors = np.linalg.eig(self.cov_mat)
         # If there are complex values, convert them to real values, because plotting
         # with complex values will be difficult later on.
         eigen_values = np.real(eigen_values)
@@ -379,162 +379,62 @@ class PCA_plot():
         
         plt.show()
 
-def loading_plots(variable_names_list, eig_vals_real, eig_vecs_real, PC=1, 
-                  n_vars='All'):
-    """
-    Generates a loading plot of a predefined number of variables with
-    the largest loading for a principle component of choice. Loadings 
-    represent the correlation between the original variables and the
-    principal components.
-  
-    Parameters
-    ----------
-    variable_names_list : list[str]
-        A list containing all variable names (str) in order of read-out.
+class Loadings():
     
-    eig_vals_real : array
-        The real eigenvalues, each repeated according to its
-        multiplicity. The eigenvalues are real, i.e. 0 imaginary part.
-        The eigenvalues are not necessarily ordered.
-    
-    eig_vecs_real : array
-        The normalized (unit 'length') eigenvectors, such that the
-        column eig_vecs_real[:,i] is the eigenvector corresponding to
-        the eigenvalue eig_vals_real[i]. The eigenvectors are real, i.e.
-        0 imaginary part.
+    def __init__(self,df_full,target):
+         
+        #self.df_target_full = Molecule(df_full,target).df_target
+        self.df_target_only_descriptors_scaled = CovarianceMatrix(df_full,target).scaleVariables()
+
+    def calculate_loadings(self):
         
-    PC : int, optional
-        Principle component number of which the loading plot is to be
-        made. Default is 1.
-    
-    n_vars : int or 'All', optional
-        The amount of variables with the largest loading that will be
-        shown in the loading plot. Default is 'All'.
-    
-    Returns
-    -------
-    Loading plot of a predefined number of variables with the largest
-    loading for a principal component of choice.
-    """
-    import numpy as np
-    import matplotlib.pyplot as plt
-    
-    # Make a list of (eigenvalue, eigenvector) tuples and sort the 
-    # (eigenvalue, eigenvector) tuples from high to low
-    
-    # Make a list of (eigenvalue, eigenvector) tuples
-    eig_pairs = [(np.abs(eig_vals_real[i]), eig_vecs_real[:,i]) 
-                  for i in range(len(eig_vals_real))]
-    # Sort the (eigenvalue, eigenvector) tuples from high to low
-    eig_pairs.sort(key=lambda tup: tup[0], reverse=True)
-    
-    # eig_val_vec_list = [(np.abs(eig_vals_real[i]), eig_vecs_real[:,i]) 
-    #                     for i in range(len(eig_vals_real))
-    #                     ].sort(key=lambda tup: tup[0], reverse=True)
-    # print(f'{type(eig_val_vec_list) = }\n')
-    # # Calculate the loading scores of all variables on the PC of interest
-    # print(f'{eig_val_vec_list[PC-1][1].T = }\n')
-    # print(f'{eig_val_vec_list[PC-1][0] = }\n')
-    # print(f'{PC-1}\n')
-    eig_val_vec_list = eig_pairs
-    loadings = eig_val_vec_list[PC-1][1].T / np.sqrt(eig_val_vec_list[PC-1][0])
-    # Convert this array to a list
-    loadings = loadings.tolist()
-    
-    # Make a list of tuples containing (variable_name, loading)
-    var_names_loadings_tuples_list = [(variable_names_list[i], loadings[i]) 
-                                      for i in range(len(loadings))]
-    print(f'{var_names_loadings_tuples_list = }')
-    # Order this list of tuples by their loading, in descending order
-    var_names_loadings_tuples_list.sort(key=lambda num: abs(num[1]),
-                                        reverse=True)
-    
-    # Only select the <n_vars> highest loadings
-    if n_vars == 'All':
-        selected = var_names_loadings_tuples_list[0:] 
-    else:
-        selected = var_names_loadings_tuples_list[0:n_vars+1]
-    
-    # Make two separate lists again: variable_names_list containing the
-    # names of the variables (ordered) (X axis) and loadings containing
-    # the loadings of these variables (Y axis). Their indices match.
-    variable_names_list, loadings = zip(*selected)
-    
-    # Make a bar graph: configuration
-    fig = plt.figure(figsize=(10,5), dpi=150)
-    ax = fig.add_axes([0,0,1,1])
-    plt.xticks(rotation=90)  # Rotate the labels so that they are readable
-    ax.set_title(f"Loading plot PC{PC}")
-    ax.set_ylabel('Loading')
-    
-    # Color all negative loadings in the plot red; all positive loadings
-    # green
-    red_green = []
-    for item in loadings:
-        item = item.real
-        if item >= 0:
-            red_green.append('green')
-        else:
-            red_green.append('red')
-    
-    # Create the bar graph
-    ax.bar(variable_names_list, loadings, color=red_green)
-    # Save and show the image
-    plt.savefig(f'Loading plot PC{PC}.png', dpi=300, bbox_inches='tight')
-    plt.show()
-    
-    
-    # ==================================================================
-    # VERSIE 2
-    # ==================================================================
-    
-    # # Discard imaginary part of eigenvalues 
-    # eig_vals = np.real(eig_vals_real)
-    # # Make a list of (eigenvalue, eigenvector) tuples
-    # eig_pairs = [(np.abs(eig_vals[i]), eig_vecs_real[:,i]) 
-    #              for i in range(len(eig_vals))]
-    
-    # # Calculate the loading of all genes on the PC of interest
-    # loading = eig_pairs[PC-1][1].T * np.sqrt(eig_pairs[PC-1][0])
-    # # Convert this array to a list
-    # loading = loading.tolist()
-    
-    # # Make a list of tuples containing (geneName, loading)
-    # listoftup = []
-    # for i in range(len(loading)):
-    #     listoftup.append((variable_names_list[i],loading[i]))
-    
-    # # Order this list of tuples by their loading, in descending order
-    # listoftup.sort(key=lambda num: abs(num[1]), reverse=True)
-    
-    # # Only select the highest loadings (see: var)
-    # selected = listoftup[0:n_vars+1]
-    
-    # # Make two separate lists again: genes containing the names of the genes (ordered) 
-    # # and loading containing the loadings of these genes. Their indices match.
-    # genes,loading = zip(*selected)
-    
-    # # Make a bar graph: configuration
-    # fig = plt.figure(figsize=(10,5), dpi=150)
-    # ax = fig.add_axes([0,0,1,1])
-    # plt.xticks(rotation=90) # Rotate the labels so that they are readable
-    # ax.set_title("Loading plot PC{PCin}".format(PCin = PC))
-    # ax.set_ylabel('Loading')
-    
-    # # Forloop to color all negative loadings in the plot red; all positive loadings green
-    # Red_Green = []
-    # for item in loading:
-    #     item = item.real
-    #     if item >= 0:
-    #         Red_Green.append('green')
-    #     else:
-    #         Red_Green.append('red')
-    
-    # # Create the bar graph
-    # ax.bar(genes,loading, color=Red_Green)
-    # # Save and show the image
-    # plt.savefig('loading.png', dpi=300, bbox_inches='tight')
-    # plt.show()
+        X = self.df_target_only_descriptors_scaled.to_numpy()
+        X =  np.vstack(X).astype(np.float)
+        U, s, VT = svd(X)
+        
+        #loads = VT.T * s / np.sqrt((len(X.rows)-1))
+        #return loads
+        
+        return X,U,s,VT
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
