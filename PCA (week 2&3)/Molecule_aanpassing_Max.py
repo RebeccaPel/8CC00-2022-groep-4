@@ -26,7 +26,7 @@ class Molecule:
 
     """    
     # Class variable = list[descriptors: str]
-    df = pd.read_csv(r'C:\Users\s139188\OneDrive - TU Eindhoven\Documents\01 TUe\.BMT 8\Q3 8CC00\Week 3 -- PCA groep\GitHub\8CC00-2022-groep-4\PCA (week 2&3)\QSAR_3_large_data.csv')
+    df = pd.read_csv(r'QSAR_3_large_data.csv')
     descriptors = list(df.columns.values)
     
     def __init__(self, df, target):

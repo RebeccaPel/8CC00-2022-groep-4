@@ -11,7 +11,7 @@ import pandas as pd
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.linalg import svd
 
-from Molecule import Molecule
+from Molecule_aanpassing_Max import Molecule
 
 def readAllDescriptors(df,target):
     '''
@@ -51,17 +51,22 @@ def readAllDescriptors(df,target):
 
 class Average:
     
-    def __init__(self,columns_of_interest_list):
+    def __init__(self,df,columns_of_interest_list):
         '''
         Parameters
         ----------
         param_list : list
             List of values of which the moving average will be calculated
         '''
+        self.df = df
+        self.len_values = len(df)
         self.columns_of_interest_list = columns_of_interest_list
-        self.len = len(columns_of_interest_list)
+        self.len_columns = len(columns_of_interest_list)  
         
-    def cumulativeMovingAverage(self):
+        # For the alternative plot:
+        self.cumulative_moving_average_dictionary = self.cumulative_moving_average_alternative()
+        
+    def cumulative_moving_average(self,values_of_column):
         '''
         This function calculates a moving average of a list.
 
@@ -71,36 +76,17 @@ class Average:
             The moving average of the input list.
         '''
         # Firstly, an empty list is created so the values can be replaced
-        cumulative_moving_average = [0]*self.len
+        cumulative_moving_average = [0]*self.len_values
         
-        for i in range(1,self.len):
+        for i in range(1,self.len_values):
             # The formula for the cumulative moving average is applied:
-            numerator = self.columns_of_interest_list[i-1] - cumulative_moving_average[i-1]
+            numerator = values_of_column[i-1] - cumulative_moving_average[i-1]
             denominator = (i-1)+1
             cumulative_moving_average[i] = cumulative_moving_average[i-1] + numerator/denominator
             
         return cumulative_moving_average
 
-class Plot:
-    
-    def __init__(self,df,columns_of_interest):
-        '''
-        Parameters
-        ----------
-        df : DataFrame
-            A dataframe with 34 columns, all descriptors of the molecule which
-            is defined in the first column with the smile
-            The dataframe can be of all targets or of a single target.
-        columns_of_interest : List of strings
-            A list of the columns of which the moving averages of the values will 
-            be plotted, can be of any length between 1 and the amount of columns 
-            that exist.
-        '''
-        self.df = df
-        self.columns_of_interest = columns_of_interest
-        self.descriptor_len = len(columns_of_interest)
-        
-    def twoDimPlot(self):
+    def plot_cumulative_moving_average(self):
         '''
         This function creates a two-dimensional plot of the moving averages. On
         the x-axis the index of the moving average and the value on the y-axis.
@@ -111,19 +97,48 @@ class Plot:
 
         '''
         # Looped for each moving average that will be plotted:
-        for i in range(self.descriptor_len):
+        for i in range(self.len_columns):
             # Extract the name of the column
-            descriptor = self.columns_of_interest[i]
+            descriptor = self.columns_of_interest_list[i]
             # Extract values of the column and convert them to a list
             values = self.df[descriptor].values.tolist()
             # The moving average is now calculated with the function
             # cumulativeMovngAverage from class Average
-            CMA = Average(values).cumulativeMovingAverage()            
+            CMA = self.cumulative_moving_average(values)     
             plt.plot(CMA)
             
             # Add axes and labels
             
         plt.show()
+        
+    def cumulative_moving_average_alternative(self):            
+        cumulative_moving_average_dictionary = {}
+        for descriptor_name in self.columns_of_interest_list:
+                
+            values = self.df[descriptor_name].values.tolist()
+            cumulative_moving_average = [0]*len(values)
+                
+            for i in range(1,len(values)):
+                # The formula for the cumulative moving average is applied:
+                numerator = values[i-1] - cumulative_moving_average[i-1]
+                denominator = (i-1)+1
+                cumulative_moving_average[i] = cumulative_moving_average[i-1] + numerator/denominator
+                    
+            cumulative_moving_average_dictionary[descriptor_name] = cumulative_moving_average
+                
+        return cumulative_moving_average_dictionary
+    
+    def plot_cumulative_moving_average_alternative(self):
+        
+        for key in self.columns_of_interest_list:
+            cma = self.cumulative_moving_average_dictionary.get(key)
+            plt.plot(cma)
+            
+        plt.legend(self.columns_of_interest_list)
+        plt.xlabel('Index')
+        plt.ylabel('Cumulative Moving Average')
+        plt.show()
+                    
         
 class Covariance:
     
