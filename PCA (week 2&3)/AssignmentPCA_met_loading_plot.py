@@ -9,27 +9,28 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from mpl_toolkits.mplot3d import Axes3D
-from scipy.linalg import svd
 
 from Molecule_aanpassing_Max import Molecule
 
-def readAllDescriptors(df,target):
+def readAllDescriptors(df,target=''):
     '''
     This function reads in all molecule descriptors of the entire dataset using
     functions from class Molecule.
+    The result is that only the molecular descriptors are kept i.e. the columns
+    SMILES and Target have been removed.
 
     Parameters
     ----------
     df : DataFrame
-        a dataframe with 34 columns, all descriptors of the molecule which
-        is defined in the first column with the smile
+        A dataframe molecular descriptors as variables i.e. columns
+        and SMILES (molecule names) as objects.
     target : str
-        must be a string being one of the three options in the target
-        column of the dataframe (ppar, thrombin,cox2)
+        Must be a string being one of the options in the target
+        column of the DataFrame (e.g. 'ppar', 'thrombin', 'cox2').
 
     Returns
     -------
-    all_descriptors : DataFrame
+    all_descriptors : pandas DataFrame
         All moleucle descriptors of all molecules in the dataset.
     '''
     # First use clas Molecule to be able to use functions in this class
@@ -50,8 +51,50 @@ def readAllDescriptors(df,target):
     return df_target_only_descriptors
 
 class Average:
+    '''
+    [Uitleg]
     
-    def __init__(self,df,columns_of_interest_list):
+    Parameters
+    ----------
+    df: pandas DataFrame
+        A dataframe molecular descriptors as variables i.e. columns
+        and SMILES (molecule names) as objects.
+        
+    columns_of_interest_list: list of strings
+        These are the columns of which the values are used to calculate (and 
+        plot) the cumulative moving average.
+        The strings must be a selection of strings that correspond to the column
+        names in the parameter df.
+        
+    Attributes
+    ----------
+    df: pandas DataFrame
+        A dataframe molecular descriptors as variables i.e. columns
+        and SMILES (molecule names) as objects.
+        
+    len_values: int
+        Number of rows in df.
+        
+    columns_of_interest_list: list of strings
+        These are the columns of which the values are used to calculate (and 
+        plot) the cumulative moving average.
+        The strings must be a selection of strings that correspond to the column
+        names in the parameter df.
+        
+    len_columns: int
+        Number of columns in df
+     
+    Methods
+    -------
+    cumulative_moving_average():
+        Calculates the cumulative moving average of the columns of interest
+        of df.
+        
+    plot_cumulative_moving_average():
+        Uses the output from cumulative_moving_average() and plots the values.    
+    '''
+    
+    def __init__(self,df,columns_of_interest_list = []):
         '''
         Parameters
         ----------
@@ -65,11 +108,28 @@ class Average:
 
         self.cumulative_moving_average_dictionary = self.cumulative_moving_average()
         
-    def cumulative_moving_average(self):            
+    def cumulative_moving_average(self): 
+        '''
+        This function calculates the cumulative moving average by using the 
+        following formula:
+            If x(i:0<=i<N) is a list of N data items, then the list of cumulative 
+            moving averages C[n], 0 <= n <= N is defined by:
+            C(0) = 0
+            for 0<n<N:
+                C(n+1)=C(n)+(x(n)-C(n))/(n+1)
+
+        Returns
+        -------
+        cumulative_moving_average_dictionary : list of integers
+            The cumulative moving average of the columns of interest in the
+            dataframe.
+        '''
+        # Create empty dictionary         
         cumulative_moving_average_dictionary = {}
         for descriptor_name in self.columns_of_interest_list:
-                
+            # Extract values per descriptor    
             values = self.df[descriptor_name].values.tolist()
+            # Create empty list for the CMA values
             cumulative_moving_average = [0]*len(values)
                 
             for i in range(1,len(values)):
@@ -77,12 +137,16 @@ class Average:
                 numerator = values[i-1] - cumulative_moving_average[i-1]
                 denominator = (i-1)+1
                 cumulative_moving_average[i] = cumulative_moving_average[i-1] + numerator/denominator
-                    
+            # Now save the list of the CMA as values to the key of descriptor name in the dictionary        
             cumulative_moving_average_dictionary[descriptor_name] = cumulative_moving_average
                 
         return cumulative_moving_average_dictionary
     
     def plot_cumulative_moving_average(self):
+        '''
+        This function plots the cumulative moving average(s) as calculated
+        by cumulative_moving_average().
+        '''
         
         for key in self.columns_of_interest_list:
             cma = self.cumulative_moving_average_dictionary.get(key)
@@ -95,8 +159,57 @@ class Average:
                     
         
 class PCA:
+    '''
     
-    def __init__(self,df_full,target):
+    Parameters
+    ----------
+    df: pandas DataFrame
+        A dataframe molecular descriptors as variables i.e. columns
+        and SMILES (molecule names) as objects.
+        
+    target: str
+        Must be a string being one of the options in the target
+        column of the DataFrame (e.g. 'ppar', 'thrombin', 'cox2').
+        
+    Attributes
+    ----------
+    df_full: pandas DataFrame
+        A dataframe molecular descriptors as variables i.e. columns
+        and SMILES (molecule names) as objects.
+        
+    df_target_full: pandas DataFrame
+        This is a copy of parameter df_full, but only the rows corresponding to the
+        parameter target are kept, the rest of the rows have been discarded.
+    
+    descriptors: list of strings
+        A list of the column names in df_full (and df_target_full)
+        
+    df_target_only_descriptors_scaled: pandas DataFrame
+        Output from the function scale_variables()
+        
+    covariance_matrix: pandas DataFrame
+        Output from the function calculate_covariance_matrix()
+        
+    eigen_values, eigen_vectors: Array of float64
+        Output from the function perform_PCA()
+        
+    Methods
+    -------
+    calculate_covariance(list1,list2,bias):
+        Calculates the covariance of two lists, with or without an added bias.
+        
+    scale_variables():
+        Scales all the variables of df_target_full with standardization.
+        
+    calculate_covariance_matrix():
+        This function creates the covariance matrix of the scaled dataframe
+        created in scaleVariables.
+        
+    perform_PCA(self):
+        Principal Component Analysis is performed on the covariance matrix.
+    '''
+    
+    def __init__(self,df,target):
         '''
         Parameters
         ----------
@@ -107,11 +220,11 @@ class PCA:
         
         Raises ValueError if list1 is not the same length as list2
         '''
-        self.df_full = df_full
+        self.df_full = df
         
-        self.df_target_full = Molecule(df_full,target).df_target
+        self.df_target_full = Molecule(df,target).df_target
         
-        self.df_target_only_descriptors = readAllDescriptors(df_full,target)
+        self.df_target_only_descriptors = readAllDescriptors(df,target)
         self.descriptors = list(self.df_target_only_descriptors.columns)
         
         # Scaled variables.
@@ -245,17 +358,34 @@ class PCA:
         return eigen_values, eigen_vectors
     
 class PCA_plot():
+    '''
+    
+    Parameters
+    ----------
+    df : DataFrame
+        a dataframe with 34 columns, all descriptors of the molecule which
+        is defined in the first column with the smile
+    targets : list, optional
+        The default is ['ppar','thrombin','cox2'].
+            
+    Attributes
+    ----------
+    targets: list, optional
+        The default is ['ppar','thrombin','cox2'].
+        
+    mat_covX: pandas DataFrame
+        The covariance matrix as given by the function calculate_covariance_matrix()
+        of a target.
+        
+    targetX_eigenval, targetX_eigvec: Array of float64
+        The eigenvectors and eigenvalues belonging to the covariance matrix of
+        a target.
+        
+    colorX: str
+        A string with what color a target will be plotted with.
+    '''
     
     def __init__(self,df,targets=['ppar','thrombin','cox2']):
-        '''
-        Parameters
-        ----------
-        df : DataFrame
-            a dataframe with 34 columns, all descriptors of the molecule which
-            is defined in the first column with the smile
-        targets : list, optional
-            The default is ['ppar','thrombin','cox2'].
-        '''
         self.targets = targets
         
         pca_target_1, pca_target_2, pca_target_3 = PCA(df,targets[0]), PCA(df,targets[1]), PCA(df,targets[2])
@@ -267,8 +397,7 @@ class PCA_plot():
         self.target1_eigval, self.target1_eigvec = pca_target_1.perform_PCA()
         self.target2_eigval, self.target2_eigvec = pca_target_2.perform_PCA()   
         self.target3_eigval, self.target3_eigvec = pca_target_3.perform_PCA()
-        self.color1, self.color2, self.color3 = 'r','b','g' 
-        
+        self.color1, self.color2, self.color3 = 'r','b','g'         
         
         
     def PCA_plot_2D(self):
