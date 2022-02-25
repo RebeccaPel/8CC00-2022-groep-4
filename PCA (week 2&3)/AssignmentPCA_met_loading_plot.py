@@ -63,7 +63,7 @@ class Average:
         self.columns_of_interest_list = columns_of_interest_list
         self.len_columns = len(columns_of_interest_list)  
 
-        self.cumulative_moving_average_dictionary = self.cumulative_moving_average_alternative()
+        self.cumulative_moving_average_dictionary = self.cumulative_moving_average()
         
     def cumulative_moving_average(self):            
         cumulative_moving_average_dictionary = {}
@@ -290,8 +290,8 @@ class PCA_plot():
                   label = str(self.targets[2]))
        
         plt.legend(loc='upper left')        
-        plt.xlabel('Component 1')
-        plt.ylabel('Component 2')
+        plt.xlabel('Principal Component 1')
+        plt.ylabel('Principal Component 2')
         
         plt.show()
         
