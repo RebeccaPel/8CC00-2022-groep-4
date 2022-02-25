@@ -380,101 +380,108 @@ class PCA_plot():
         
         plt.show()
 
-def loading_plots(variable_names_list, eig_vals_real, eig_vecs_real, PC=1, 
-                  n_vars='All'):
-    """
-    Generates a loading plot of a predefined number of variables with
-    the largest loading for a principle component of choice. Loadings 
-    represent the correlation between the original variables and the
-    principal components.
-  
-    Parameters
-    ----------
-    variable_names_list : list[str]
-        A list containing all variable names (str) in order of read-out.
-    
-    eig_vals_real : array
-        The real eigenvalues, each repeated according to its
-        multiplicity. The eigenvalues are real, i.e. 0 imaginary part.
-        The eigenvalues are not necessarily ordered.
-    
-    eig_vecs_real : array
-        The normalized (unit 'length') eigenvectors, such that the
-        column eig_vecs_real[:,i] is the eigenvector corresponding to
-        the eigenvalue eig_vals_real[i]. The eigenvectors are real, i.e.
-        0 imaginary part.
+    def loading_plots(self, variable_names_list, target, PC=1, n_vars='All'):
+        """
+        Generates a loading plot of a predefined number of variables with
+        the largest loading for a principle component of choice. Loadings 
+        represent the correlation between the original variables and the
+        principal components.
+      
+        Parameters
+        ----------
+        variable_names_list : list[str]
+            A list containing all variable names (str) in order of read-out.
         
-    PC : int, optional
-        Principle component number of which the loading plot is to be
-        made. Default is 1.
-    
-    n_vars : int or 'All', optional
-        The amount of variables with the largest loading that will be
-        shown in the loading plot. Default is 'All'.
-    
-    Returns
-    -------
-    Loading plot of a predefined number of variables with the largest
-    loading for a principal component of choice.
-    """
-
-    # Select the correct data:
+        eig_vals_real : array
+            The real eigenvalues, each repeated according to its
+            multiplicity. The eigenvalues are real, i.e. 0 imaginary part.
+            The eigenvalues are not necessarily ordered.
         
-
-    # Make a list of (eigenvalue, eigenvector) tuples and sort the 
-    # (eigenvalue, eigenvector) tuples from high to low
+        eig_vecs_real : array
+            The normalized (unit 'length') eigenvectors, such that the
+            column eig_vecs_real[:,i] is the eigenvector corresponding to
+            the eigenvalue eig_vals_real[i]. The eigenvectors are real, i.e.
+            0 imaginary part.
+            
+        PC : int, optional
+            Principle component number of which the loading plot is to be
+            made. Default is 1.
+        
+        n_vars : int or 'All', optional
+            The amount of variables with the largest loading that will be
+            shown in the loading plot. Default is 'All'.
+        
+        Returns
+        -------
+        Loading plot of a predefined number of variables with the largest
+        loading for a principal component of choice.
+        """
     
-    # Make a list of (eigenvalue, eigenvector) tuples
-    eig_val_vec_list = [(np.abs(eig_vals_real[i]), eig_vecs_real[:,i]) 
-                   for i in range(len(eig_vals_real))]
-    # Sort the (eigenvalue, eigenvector) tuples from high to low
-    eig_val_vec_list.sort(key=lambda tup: tup[0], reverse=True)
-
-    # Calculate the loading scores of all variables on the PC of interest
-    loadings = eig_val_vec_list[PC-1][1].T / np.sqrt(eig_val_vec_list[PC-1][0])
-    # Convert this array to a list
-    loadings = loadings.tolist()
+        # Select the correct data:
+        if target == 0:
+            eig_vals,eig_vecs = self.target1_eigval, self.target1_eigvec
+        elif target == 1:
+            eig_vals,eig_vecs = self.target2_eigval, self.target2_eigvec
+        elif target == 2:
+            eig_vals,eig_vecs = self.target3_eigval, self.target3_eigvec
+        else: 
+            raise ValueError('Target unknown')
+            
     
-    # Make a list of tuples containing (variable_name, loading)
-    var_names_loadings_tuples_list = [(variable_names_list[i], loadings[i]) 
-                                      for i in range(len(loadings))]
-    #print(f'{var_names_loadings_tuples_list = }')
-    # Order this list of tuples by their loading, in descending order
-    var_names_loadings_tuples_list.sort(key=lambda num: abs(num[1]),
-                                        reverse=True)
+        # Make a list of (eigenvalue, eigenvector) tuples and sort the 
+        # (eigenvalue, eigenvector) tuples from high to low
+        
+        # Make a list of (eigenvalue, eigenvector) tuples
+        eig_val_vec_list = [(np.abs(eig_vals[i]), eig_vecs[:,i]) 
+                       for i in range(len(eig_vals))]
+        # Sort the (eigenvalue, eigenvector) tuples from high to low
+        eig_val_vec_list.sort(key=lambda tup: tup[0], reverse=True)
     
-    # Only select the <n_vars> highest loadings
-    if n_vars == 'All':
-        selected = var_names_loadings_tuples_list[0:] 
-    else:
-        selected = var_names_loadings_tuples_list[0:n_vars+1]
-    
-    # Make two separate lists again: variable_names_list containing the
-    # names of the variables (ordered) (X axis) and loadings containing
-    # the loadings of these variables (Y axis). Their indices match.
-    variable_names_list, loadings = zip(*selected)
-    
-    # Make a bar graph: configuration
-    fig = plt.figure(figsize=(10,5), dpi=150)
-    ax = fig.add_axes([0,0,1,1])
-    plt.xticks(rotation=90)  # Rotate the labels so that they are readable
-    ax.set_title(f"Loading plot PC{PC}")
-    ax.set_ylabel('Loading')
-    
-    # Color all negative loadings in the plot red; all positive loadings
-    # green
-    red_green = []
-    for item in loadings:
-        item = item.real
-        if item >= 0:
-            red_green.append('green')
+        # Calculate the loading scores of all variables on the PC of interest
+        loadings = eig_val_vec_list[PC-1][1].T / np.sqrt(eig_val_vec_list[PC-1][0])
+        # Convert this array to a list
+        loadings = loadings.tolist()
+        
+        # Make a list of tuples containing (variable_name, loading)
+        var_names_loadings_tuples_list = [(variable_names_list[i], loadings[i]) 
+                                          for i in range(len(loadings))]
+        #print(f'{var_names_loadings_tuples_list = }')
+        # Order this list of tuples by their loading, in descending order
+        var_names_loadings_tuples_list.sort(key=lambda num: abs(num[1]),
+                                            reverse=True)
+        
+        # Only select the <n_vars> highest loadings
+        if n_vars == 'All':
+            selected = var_names_loadings_tuples_list[0:] 
         else:
-            red_green.append('red')
-    
-    # Create the bar graph
-    ax.bar(variable_names_list, loadings, color=red_green)
-    # Save and show the image
-    plt.savefig(f'Loading plot PC{PC}.png', dpi=300, bbox_inches='tight')
-    plt.show()
+            selected = var_names_loadings_tuples_list[0:n_vars+1]
+        
+        # Make two separate lists again: variable_names_list containing the
+        # names of the variables (ordered) (X axis) and loadings containing
+        # the loadings of these variables (Y axis). Their indices match.
+        variable_names_list, loadings = zip(*selected)
+        
+        # Make a bar graph: configuration
+        fig = plt.figure(figsize=(10,5), dpi=150)
+        ax = fig.add_axes([0,0,1,1])
+        plt.xticks(rotation=90)  # Rotate the labels so that they are readable
+        ax.set_title(f"Loading plot PC{PC}")
+        ax.set_ylabel('Loading')
+        
+        # Color all negative loadings in the plot red; all positive loadings
+        # green
+        red_green = []
+        for item in loadings:
+            item = item.real
+            if item >= 0:
+                red_green.append('green')
+            else:
+                red_green.append('red')
+        
+        # Create the bar graph
+        ax.bar(variable_names_list, loadings, color=red_green)
+        # Save and show the image
+        plt.savefig(f'Loading plot PC{PC}.png', dpi=300, bbox_inches='tight')
+        plt.show()
     
 

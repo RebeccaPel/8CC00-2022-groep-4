@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 
 from Molecule_aanpassing_Max import Molecule
-from AssignmentPCA_met_loading_plot import readAllDescriptors, Average, PCA, PCA_plot, loading_plots
+from AssignmentPCA_met_loading_plot import readAllDescriptors, Average, PCA, PCA_plot
 
 # (a) Testing Molcule
 df = pd.read_csv('QSAR_3_large_data.csv')
@@ -52,9 +52,8 @@ pca_plot = PCA_plot(df)
 n_vars = 5
 n_PCs = 3
 for PC in range(n_PCs):
-    loading_plots(Molecule(df, 'ppar').descriptors, 
-                  eig_vals_real = pca_eigval, 
-                  eig_vecs_real = pca_eigvec,
+    pca_plot.loading_plots(Molecule(df, 'ppar').descriptors, 
+                  0,
                   PC = PC+1, 
                   n_vars = n_vars)
 
