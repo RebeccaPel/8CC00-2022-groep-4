@@ -9,20 +9,21 @@ import pandas as pd
 import numpy as np
 
 from Molecule import Molecule
-from AssignmentPCA import readAllDescriptors, Plot, Covariance, CovarianceMatrix, PCA, PCA_plot, Loadings
+from AssignmentPCA import (readAllDescriptors, Plot, Covariance, 
+CovarianceMatrix, PCA, PCA_plot, loading_plots)
 
-# (a) Testing Molecule
+# (a) Testing Molcule
 df = pd.read_csv('QSAR_3_large_data.csv')
 df_target_full = Molecule(df,'ppar').df_target
 # (b)
-random_molecule_descriptors = Molecule(df,'ppar').readMolDescriptors(2)
+random_molecule_descriptors = Molecule(df,'ppar').read_mol_descriptors(2)
 
 # (c) Testing reading all descriptors
 df_target_only_descriptors = readAllDescriptors(df, 'ppar')
     
 # (d) (e) Testing Plot
 columns_of_interest = ['nHet','nS','nAB','SlogP'] #some randomly chosen descriptors
-#plot = Plot(df_target_only_descriptors,columns_of_interest)
+#plot = Plot(df_target,columns_of_interest)
 #twoDplot = plot.twoDimPlot()
 
 # (f) Testing Covariance
@@ -48,8 +49,13 @@ pca_plot = PCA_plot(df)
 #pca_plot.PCA_plot_3D()
 
 # (j) Testing loadings:
-load = Loadings(df,'ppar')
-X,u,s,vt = load.calculate_loadings()
+n_vars = 5
+n_PCs = 3
+for PC in range(n_PCs):
+    loading_plots(Molecule(df, 'ppar').descriptors, 
+                  eig_vals_real = pca_eigval, eig_vecs_real = pca_eigvec,
+                  PC = PC+1, 
+                  n_vars = n_vars)
 
 
 
