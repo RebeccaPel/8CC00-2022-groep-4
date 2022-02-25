@@ -23,7 +23,7 @@ df_target_only_descriptors = readAllDescriptors(df, 'ppar')
 # (d) (e) Testing Plot
 columns_of_interest = ['nHet','nS','nAB','SlogP'] #some randomly chosen descriptors
 plot = Average(df_target_full,columns_of_interest)
-cum_mov_avg_dict = plot.cumulative_moving_average_alternative()
+cum_mov_avg_dict = plot.cumulative_moving_average()
 #plot.plot_cumulative_moving_average_alternative()
 
 # (f) Testing Covariance
