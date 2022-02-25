@@ -457,9 +457,9 @@ class PCA_plot():
                     label = str(self.targets[2])) 
         
         ax.legend(loc='upper left')        
-        ax.set_xlabel('Component 1')
-        ax.set_ylabel('Component 2')
-        ax.set_zlabel('Component 3')
+        ax.set_xlabel('Principal Component 1')
+        ax.set_ylabel('Principal Component 2')
+        ax.set_zlabel('Principal Component 3')
         
         plt.show()
 
