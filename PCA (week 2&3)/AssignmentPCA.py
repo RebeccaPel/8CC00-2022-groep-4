@@ -57,8 +57,7 @@ def readAllDescriptors(df,target=''):
 
 
 class Average:
-    """
-    [Uitleg]
+    """Calculate and plot cumulative moving average.
     
     Parameters
     ----------
@@ -115,8 +114,7 @@ class Average:
         self.cumulative_moving_average_dictionary = self.cumulative_moving_average()
         
     def cumulative_moving_average(self): 
-        """
-        This function calculates the cumulative moving average by using the 
+        """This function calculates the cumulative moving average by using the 
         following formula:
             If x(i:0<=i<N) is a list of N data items, then the list of cumulative 
             moving averages C[n], 0 <= n <= N is defined by:
@@ -149,8 +147,7 @@ class Average:
         return cumulative_moving_average_dictionary
     
     def plot_cumulative_moving_average(self):
-        """
-        This function plots the cumulative moving average(s) as calculated
+        """This function plots the cumulative moving average(s) as calculated
         by cumulative_moving_average().
         """
         
@@ -235,8 +232,7 @@ class PCA:
 
         
     def calculate_covariance(self, list1=None, list2=None, bias=False):
-        """
-        The covariance of two lists is calculated.
+        """The covariance of two lists is calculated.
         
         Parameters
         ----------
@@ -277,8 +273,7 @@ class PCA:
     
     
     def scale_variables(self): 
-        """
-        This functions scales all values in the DataFrame with the 
+        """This functions scales all values in the DataFrame with the 
         standardization method.
 
         Returns
@@ -320,9 +315,8 @@ class PCA:
     
     
     def calculate_covariance_matrix(self):
-        """
-        This function creates the covariance matrix of the scaled dataframe
-        created in scaleVariables.
+        """This function creates the covariance matrix of the scaled
+        DataFrame created in scale_variables.
 
         Returns
         -------
@@ -445,8 +439,7 @@ class PCA_plot():
         
         
     def PCA_plot_2D(self):
-        """
-        A 2D plot is created with the two most importend principal
+        """A 2D plot is created with the two most importend principal
         components, each on an axis. The values of the three targets are
         all plotted in a different color.
         """
@@ -468,9 +461,9 @@ class PCA_plot():
     
     
     def PCA_plot_3D(self):
-        """
-        A 3D plot is created with the three most important components, each on
-        an axis. The values of the three targets are all plotted in a different color.
+        """A 3D plot is created with the three most important
+        components, each on an axis. The values of the three targets are
+        all plotted in a different color.
         """
         fig = plt.figure(1, figsize=(4, 3))
         ax = Axes3D(fig, rect=[0, 0, 0.95, 1], elev=48, azim=134)
@@ -570,8 +563,7 @@ class PCA_plot():
     
     def loading_plots_all_targets(variable_names_list, eig_vals_real, 
                                   eig_vecs_real, PC=1, n_vars='All'):
-        """
-        Generates a loading plot of a predefined number of variables with
+        """Generates a loading plot of a predefined number of variables with
         the largest loading for a principle component of choice. Loadings 
         represent the correlation between the original variables and the
         principal components.
@@ -605,11 +597,6 @@ class PCA_plot():
         Loading plot of a predefined number of variables with the largest
         loading for a principal component of choice.
         """
-        # Select the correct data:
-
-        # Make a list of (eigenvalue, eigenvector) tuples and sort the 
-        # (eigenvalue, eigenvector) tuples from high to low
-        print(f'{eig_vals_real = }')
         # Make a list of (eigenvalue, eigenvector) tuples
         eig_val_vec_list = [(abs(eig_vals_real[i]), eig_vecs_real[:,i]) 
                     for i in range(len(eig_vals_real))]
