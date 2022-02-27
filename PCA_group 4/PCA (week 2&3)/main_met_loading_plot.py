@@ -8,10 +8,10 @@ Created on Tue Feb 15 17:02:38 2022
 import pandas as pd
 import numpy as np
 
-from Molecule import Molecule
-from AssignmentPCA import readAllDescriptors, Average, PCA, PCA_plot 
+from Molecule_aanpassing_Max import Molecule
+from AssignmentPCA_met_loading_plot import readAllDescriptors, Average, PCA, PCA_plot
 
-# (a) Testing Molecule
+# (a) Testing Molcule
 df = pd.read_csv('QSAR_3_large_data.csv')
 df_target_full = Molecule(df,'ppar').df_target
 # (b)
@@ -45,28 +45,26 @@ pca_plot = PCA_plot(df)
 #pca_plot.PCA_plot_2D()
 #pca_plot.PCA_plot_3D()
 
-# # (j) Testing loadings
-
-# # Test for all targets
+# # (j) Testing loadings:
 # n_vars = 5
 # n_PCs = 3
 # for PC in range(n_PCs):
-#     pca_plot.loading_plots_all_targets(Molecule(df, 'ppar').descriptors, 
+#     pca_plot.loading_plots(Molecule(df, 'ppar').descriptors, 
 #                   0,
 #                   PC = PC+1, 
 #                   n_vars = n_vars)
 
-# Test per target
-n_vars = 'All'
+n_vars = 5
 n_PCs = 3
-# for target in ['ppar', 'thrombin', 'cox2']:
-for PC in range(n_PCs):
-    PCA_plot(df).loading_plots_per_target(Molecule(df, 'ppar').descriptors[2:], 
-                  # eig_vals_real = pca_eigval, 
-                  # eig_vecs_real = pca_eigvec,
-                  # target = target,
-                  PC = PC+1, 
-                  n_vars = n_vars)
+PC = 1
+for target in ['ppar', 'thrombin', 'cox2']:
+    # for PC in range(n_PCs):
+        pca_plot.loading_plots(Molecule(df, 'ppar').descriptors[2:], 
+                      # eig_vals_real = pca_eigval, 
+                      # eig_vecs_real = pca_eigvec,
+                      target = target,
+                      PC = PC+1, 
+                      n_vars = n_vars)
 
 
 
