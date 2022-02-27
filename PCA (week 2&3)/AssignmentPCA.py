@@ -230,7 +230,8 @@ class PCA:
         
         # Covariance matrix.
         self.covariance_matrix = self.calculate_covariance_matrix()
-        self.eigen_values, self.eigen_vectors = self.perform_PCA()
+        self.eigen_values, self.eigen_vectors, self.var_exp, self.cum_var_exp \
+            = self.perform_PCA()
 
         
     def calculate_covariance(self, list1=None, list2=None, bias=False):
@@ -354,23 +355,38 @@ class PCA:
     
     
     def perform_PCA(self):
-        """
-        Principal Component Analysis is performed on the covariance matrix.
+        """Principal Component Analysis is performed on the covariance
+        matrix.
 
         Returns
         -------
         eig_vals : Array
             Eigenvalues of the covariance matrix
+            
         eig_vecs : Array
             Eigenvectors of the covariance matrix
+            
+        cum_var_exp : 
+            
         """
-        # Use the NumPy function to extract eigenvalues and eigenvectors
+        # Use the NumPy method to extract eigenvalues and eigenvectors
         eigen_values, eigen_vectors = np.linalg.eig(self.covariance_matrix)
-        # If there are complex values, convert them to real values, because plotting
-        # with complex values will be difficult later on.
+        # If there are complex values, convert them to real values, 
+        # because plotting with complex values will be difficult later
+        # on.
         eigen_values = np.real(eigen_values)
         eigen_vectors = np.real(eigen_vectors)
-        return eigen_values, eigen_vectors
+        
+        
+        # Calculation of the explained or overall variance
+        sum_eig_vals = sum(eigen_values)
+        var_exp = [(i / sum_eig_vals)*100
+                   for i in sorted(eigen_values, reverse=True)]
+        
+        # Cumulative explained variance
+        cum_var_exp = np.cumsum(var_exp) 
+        
+        return eigen_values, eigen_vectors, var_exp, cum_var_exp
 
 
 class PCA_plot():
@@ -379,8 +395,7 @@ class PCA_plot():
     Parameters
     ----------
     df : DataFrame
-        a dataframe with 34 columns, all descriptors of the molecule
-        which is defined in the first column with the SMILES.
+        A dataframe with the data.
     targets : list, optional
         The default is ['ppar','thrombin','cox2'].
             
@@ -410,10 +425,21 @@ class PCA_plot():
         self.mat_cov2 = pca_target_2.calculate_covariance_matrix()
         self.mat_cov3 = pca_target_3.calculate_covariance_matrix()
         
-        self.target1_eigval, self.target1_eigvec = pca_target_1.perform_PCA()
-        self.target2_eigval, self.target2_eigvec = pca_target_2.perform_PCA()   
-        self.target3_eigval, self.target3_eigvec = pca_target_3.perform_PCA()
-        self.color1, self.color2, self.color3 = 'r','b','g'         
+        self.target1_eigval, self.target1_eigvec, self.target1_var_exp, \
+            self.target1_cum_var_exp = pca_target_1.perform_PCA()
+        self.target2_eigval, self.target2_eigvec, self.target2_var_exp, \
+            self.target2_cum_var_exp = pca_target_2.perform_PCA()   
+        self.target3_eigval, self.target3_eigvec, self.target3_var_exp, \
+            self.target3_cum_var_exp = pca_target_3.perform_PCA()
+        self.color1, self.color2, self.color3 = 'r','b','g'       
+        
+        
+        pca = PCA(df, targets)
+        
+        self.mat_cov = pca.calculate_covariance_matrix()
+        
+        self.eigval, self.eigvec, self.var_exp, self.cum_var_exp = \
+            pca.perform_PCA()
         
         
     def PCA_plot_2D(self):
@@ -475,6 +501,66 @@ class PCA_plot():
         ax.set_ylabel('Principal Component 2')
         ax.set_zlabel('Principal Component 3')
         plt.show()
+    
+    def var_plot(self, var_exp, cum_var_exp, eigen_vals):
+        """Generates figures with information on explained variance per
+        PC and cumulative explained variance and a scree plot.
+      
+        Parameters
+        -----------
+        var_exp: list[float]
+            List with len = n_features containing the variance explained
+            for each principal component sorted from high to low.
+            
+        cum_var_exp: list[float]
+            List with len = n_features containing the cumulative
+            explained variance of the principal components.
+            
+        eigen_vals: array
+            Array containing the eigenvalues of the system with shape
+            (n_features,).
+        
+        Returns
+        -----------
+        Two figures: 
+            First figure: bar graph of explained variance per PC and 
+            step graph of cumulative explained variance.
+            Second figure: scree plot
+        """
+        import matplotlib.pyplot as plt
+
+        # First figure: step and bar plot of variance
+        # Figure configurations 
+        plt.figure(figsize=(15,15))
+        plt.xlabel('Principle Components')
+        plt.ylabel('Variance Explained')
+        plt.title('Explained variance per principle component and '
+                  'cumulative explained variance')
+        
+        # Plot bar graph - explained variance per PC
+        plt.bar(range(len(self.var_exp)), self.var_exp,
+                color='blue', alpha=0.5,
+                label='Explained variance for each PC')
+        
+        # Plot step graph - cumulative explained variance
+        plt.step(range(len(self.cum_var_exp)), 
+                 self.cum_var_exp, color='red',
+                 label='Cumulative explained variance')
+        plt.xticks(fontsize=20)
+        plt.legend(loc='best')
+        plt.savefig('Varplot.png')
+        plt.show()
+        
+        # Second figure: scree plot
+        plt.figure(figsize=(15,15))
+        plt.xlabel('Principle Component number')
+        plt.ylabel('Eigenvalue')
+        plot_name = 'Screeplot'
+        plt.title(plot_name)
+        plt.plot(range(len(self.eigval)), self.eigval,
+                 'o-', linewidth=2)
+        plt.show()
+        plt.savefig(plot_name)
     
     
     def loading_plots_all_targets(variable_names_list, eig_vals_real, eig_vecs_real, PC=1, 
