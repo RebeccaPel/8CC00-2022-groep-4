@@ -50,7 +50,8 @@ class Molecule:
     def __init__(self, df, target):
         self.target = target
         self.df = df
-        self.df_target = df[(df['Target'] == target)]
+        # self.df_target = df[(df['Target'] == target)]
+        self.df_target = df
         self.columns = len(df.columns) # number of columns
         
         

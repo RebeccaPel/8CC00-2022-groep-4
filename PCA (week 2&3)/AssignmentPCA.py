@@ -366,7 +366,9 @@ class PCA:
         eig_vecs : Array
             Eigenvectors of the covariance matrix
             
-        cum_var_exp : 
+        cum_var_exp : list
+            List of the cumulative explained variance, with index 0
+            corresponding to the CMA of PC 1, index 1 of PC2, etc.
             
         """
         # Use the NumPy method to extract eigenvalues and eigenvectors
@@ -460,8 +462,8 @@ class PCA_plot():
                   label = str(self.targets[2]))
        
         plt.legend(loc='upper left')        
-        plt.xlabel('Principal Component 1')
-        plt.ylabel('Principal Component 2')
+        plt.xlabel(f'Principal Component 1 -- {self.var_exp[0]:.2f}% variance')
+        plt.ylabel(f'Principal Component 2 -- {self.var_exp[1]:.2f}% variance')
         plt.show()
     
     
@@ -497,9 +499,9 @@ class PCA_plot():
                     label = str(self.targets[2])) 
         
         ax.legend(loc='upper left')        
-        ax.set_xlabel('Principal Component 1')
-        ax.set_ylabel('Principal Component 2')
-        ax.set_zlabel('Principal Component 3')
+        ax.set_xlabel('Principal Component 1 -- {self.var_exp[0]:.2f}% variance')
+        ax.set_ylabel('Principal Component 2 -- {self.var_exp[1]:.2f}% variance')
+        ax.set_zlabel('Principal Component 3 -- {self.var_exp[2]:.2f}% variance')
         plt.show()
     
     def var_plot(self, var_exp, cum_var_exp, eigen_vals):
@@ -546,6 +548,9 @@ class PCA_plot():
         plt.step(range(len(self.cum_var_exp)), 
                  self.cum_var_exp, color='red',
                  label='Cumulative explained variance')
+        # Plot horizontal line at 70% and 99% expl. variance
+        plt.axhline(y = 70, color = 'g', linestyle = 'dashed')
+        plt.axhline(y = 99, color = 'g', linestyle = 'dashed')
         plt.xticks(fontsize=20)
         plt.legend(loc='best')
         plt.savefig('Varplot.png')
@@ -563,8 +568,8 @@ class PCA_plot():
         plt.savefig(plot_name)
     
     
-    def loading_plots_all_targets(variable_names_list, eig_vals_real, eig_vecs_real, PC=1, 
-                                    n_vars='All'):
+    def loading_plots_all_targets(variable_names_list, eig_vals_real, 
+                                  eig_vecs_real, PC=1, n_vars='All'):
         """
         Generates a loading plot of a predefined number of variables with
         the largest loading for a principle component of choice. Loadings 
@@ -600,16 +605,13 @@ class PCA_plot():
         Loading plot of a predefined number of variables with the largest
         loading for a principal component of choice.
         """
-        #print(f'\n{PC = }\n')
         # Select the correct data:
-        # print(f'{len(variable_names_list) = }') 
-        #print(f'{len(eig_vals_real) = }') 
 
         # Make a list of (eigenvalue, eigenvector) tuples and sort the 
         # (eigenvalue, eigenvector) tuples from high to low
-        
+        print(f'{eig_vals_real = }')
         # Make a list of (eigenvalue, eigenvector) tuples
-        eig_val_vec_list = [(np.abs(eig_vals_real[i]), eig_vecs_real[:,i]) 
+        eig_val_vec_list = [(abs(eig_vals_real[i]), eig_vecs_real[:,i]) 
                     for i in range(len(eig_vals_real))]
         # Sort the (eigenvalue, eigenvector) tuples from high to low
         eig_val_vec_list.sort(key=lambda tup: tup[0], reverse=True)
@@ -638,8 +640,6 @@ class PCA_plot():
         # the loadings of these variables (Y axis). Their indices match.
         variable_names_list, loadings = zip(*selected)
         
-        print(f'{variable_names_list = }\n')
-        print(f'{loadings = }\n')
         # Make a bar graph: configuration
         fig = plt.figure(figsize=(10,5), dpi=150)
         ax = fig.add_axes([0,0,1,1])

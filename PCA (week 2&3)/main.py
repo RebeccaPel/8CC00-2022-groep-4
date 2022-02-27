@@ -26,37 +26,40 @@ plot = Average(df_target_full,columns_of_interest)
 cum_mov_avg_dict = plot.cumulative_moving_average()
 #plot.plot_cumulative_moving_average_alternative()
 
-# (f) Testing Covariance------------------------------------------------
+# (f) Covariance------------------------------------------------
 lst1 = df['nHet'].values.tolist()
 lst2 = df['SlogP'].values.tolist()
 pca = PCA(df,'ppar')
 covariance_two_lists = pca.calculate_covariance(lst1,lst2,bias=True)
 covariance_test_two_lists = np.cov(lst1,lst2) # Give the correct output
 
-# (g) Testing Covariance matrix with scaled values ---------------------
+# (g) Covariance matrix with scaled values ---------------------
 df_target_only_descriptors_scaled = pca.df_target_only_descriptors_scaled
 df_target_covariance_matrix = pca.calculate_covariance_matrix()
 
-# (h) Testing PCA ------------------------------------------------------
+# (h) PCA ------------------------------------------------------
 pca_eigval, pca_eigvec, pca_var_exp, pca_cum_var_exp = pca.perform_PCA()
 
-# (i) Testing plotting -------------------------------------------------
-# pca_plot = PCA_plot(df)
-#pca_plot.PCA_plot_2D()
+# (i) Plotting -------------------------------------------------
+pca_plot = PCA_plot(df)
+pca_plot.PCA_plot_2D()
 #pca_plot.PCA_plot_3D()
 
-# (j) Testing loadings -----------------------------------------------
-
-# # Test for all targets
+# (j) Loading plots-----------------------------------------------
+# Test for all targets
+# variable_names_list = list(Molecule(df,"ppar").descriptors)
 # n_vars = 5
 # n_PCs = 3
 # for PC in range(n_PCs):
-#     pca_plot.loading_plots_all_targets(Molecule(df, 'ppar').descriptors, 
-#                   0,
-#                   PC = PC+1, 
-#                   n_vars = n_vars)
-
-# Test per target
+#     pca_plot.loading_plots_all_targets(
+#         variable_names_list = variable_names_list,
+#         eig_vals_real = pca_eigval, 
+#         eig_vecs_real = pca_eigvec,
+#         PC=PC+1,
+#         n_vars = n_vars
+#         )
+        
+## Per target
 # n_vars = 'All'
 # n_PCs = 3
 # for target in ['ppar', 'thrombin', 'cox2']:
@@ -68,17 +71,11 @@ pca_eigval, pca_eigvec, pca_var_exp, pca_cum_var_exp = pca.perform_PCA()
 #                       PC = PC+1, 
 #                       n_vars = n_vars)
     
-# Testing var plot & scree plot ----------------------------------------
-PCA_plot(df).var_plot(pca_var_exp,
-                      pca_cum_var_exp,
-                      pca_eigval
-                      )
-
-
-
-
-
-
+## Var plot & scree plot ----------------------------------------
+# PCA_plot(df).var_plot(pca_var_exp,
+#                       pca_cum_var_exp,
+#                       pca_eigval
+#                       )
 
 
 
